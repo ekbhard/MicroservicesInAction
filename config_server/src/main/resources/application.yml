@@ -1,0 +1,17 @@
+server:
+  port: 8071
+
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/config
+  profiles:
+    active: native
+
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG

@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      backend:
+        aliases:
+          - "database"
+
+
+  configserver:
+    image: ostock/config_server:0.0.1-SNAPSHOT
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "8071:8071"
+    networks:
+      backend:
+        aliases:
+          - "configserver"
+
+
+  licensing-service:
+    depends_on:
+      postgres:
+        condition: service_healthy
+      configserver:
+        condition: service_started
+    image: ostock/licensing-service:0.0.1-SNAPSHOT
+    build:
+      dockerfile: Dockerfile
+    restart: "no"
+    environment:
+      - "SPRING_PROFILES_ACTIVE=dev"
+    ports:
+      - "8081:8081"
+    networks:
+      backend:
+        aliases:
+          - "licenseservice"
+volumes:
+  postgres_data:
+networks:
+  backend:
+    driver: bridge
